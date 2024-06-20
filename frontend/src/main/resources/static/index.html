@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Todo List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 50px;
+            border-radius: 8px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #333;
+            margin: 0 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        nav a:hover {
+            color: #007BFF;
+        }
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fafafa;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .todo-item:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+        .todo-item button {
+            background-color: #ff4d4d;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .todo-item button:hover {
+            background-color: #ff1a1a;
+        }
+        .add-todo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .add-todo input {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .add-todo button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .add-todo button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Todo List</h1>
+
+    <section id="home" class="active">
+        <h2>Add Todo</h2>
+        <div class="add-todo">
+            <input type="text" id="new-todo" placeholder="New todo">
+            <button onclick="addTodo()">Add</button>
+        </div>
+    </section>
+
+    <section id="view-todos">
+        <h2>All Todos</h2>
+        <ul id="todo-list-view"></ul>
+    </section>
+</div>
+
+<script>
+    async function fetchTodos() {
+        try {
+            const response = await fetch('http://localhost:8080/todos');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const todos = await response.json();
+            const list = document.getElementById('todo-list-view');
+            list.innerHTML = '';
+            todos.forEach(todo => {
+                const item = document.createElement('li');
+                item.className = 'todo-item';
+                item.innerHTML = `
+                        <span>${todo.description}</span>
+                        <button onclick="removeTodo(${todo.id})">Remove</button>
+                    `;
+                list.appendChild(item);
+            });
+        } catch (error) {
+            console.error('Failed to fetch todos:', error);
+        }
+    }
+
+    async function addTodo() {
+        const input = document.getElementById('new-todo');
+        const description = input.value;
+        if (description.trim() === '') {
+            alert('Todo description cannot be empty');
+            return;
+        }
+        try {
+            const response = await fetch('http://localhost:8080/todos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ description, completed: false })
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            input.value = '';
+            fetchTodos();
+        } catch (error) {
+            console.error('Failed to add todo:', error);
+        }
+    }
+
+    async function removeTodo(id) {
+        try {
+            const response = await fetch(`http://localhost:8080/todos/${id}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            fetchTodos();
+        } catch (error) {
+            console.error('Failed to remove todo:', error);
+        }
+    }
+    fetchTodos();
+</script>
+</body>
+</html>
